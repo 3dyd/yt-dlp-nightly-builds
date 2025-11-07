@@ -1,0 +1,55 @@
+name: schedule
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: '42 23 * * *'  # daily at 23:42 UTC
+
+jobs:
+  prepare:
+    name: prepare
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    outputs:
+      skip_build: ${{ steps.generate-outputs.outputs.skip_run }}
+      yt_dlp_ref: ${{ steps.generate-outputs.outputs.yt_dlp_ref }}
+      yt_dlp_version: ${{ steps.generate-outputs.outputs.yt_dlp_version }}
+
+    steps:
+      - name: Checkout yt-dlp
+        uses: actions/checkout@v4
+        with:
+          repository: yt-dlp/yt-dlp
+
+      - name: Generate Outputs
+        id: generate-outputs
+        run: |
+          set -xeu
+
+          commit_date="$(git log -1 --format=%cd --date=format:'%Y.%m.%d')"
+          current_date="$(date +"%Y.%m.%d")"
+          skip_build="false"
+          [[ "$commit_date" == "$current_date" ]] || skip_build="true"
+
+          echo "yt_dlp_version=$current_date" >> $GITHUB_OUTPUT
+          echo "yt_dlp_ref=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          echo "skip_build=$skip_build" >> $GITHUB_OUTPUT
+
+  build:
+    needs: prepare
+    if: needs.prepare.outputs.skip_build != 'true'
+    uses: 3dyd/yt-dlp-builds/.github/workflows/build.yml@master
+    with:
+      yt_dlp_ref: ${{ needs.prepare.outputs.yt_dlp_ref }}
+      yt_dlp_version: ${{ needs.prepare.outputs.yt_dlp_version }}
+      current_update_channel: nightly
+      other_update_channels_spec: "'stable': '3dyd/yt-dlp-builds'"
+      pyi_rebuild: false
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    secrets: inherit
