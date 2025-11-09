@@ -29,13 +29,13 @@ jobs:
         run: |
           set -xeu
 
-          commit_date="$(git log -1 --format=%cd --date=format:'%Y.%m.%d')"
-          current_date="$(date +"%Y.%m.%d")"
+          commit_date="$(TZ=UTC git log -1 --format=%cd --date=format-local:'%Y.%m.%d')"
+          current_date="$(TZ=UTC date +"%Y.%m.%d")"
           skip_build="false"
           [[ "$commit_date" == "$current_date" ]] || skip_build="true"
 
           echo "yt_dlp_version=$current_date" >> $GITHUB_OUTPUT
-          echo "yt_dlp_ref=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          echo "yt_dlp_ref=$(git log -1 --format=%H)" >> $GITHUB_OUTPUT
           echo "skip_build=$skip_build" >> $GITHUB_OUTPUT
 
   build:
