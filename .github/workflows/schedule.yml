@@ -2,6 +2,15 @@ name: schedule
 
 on:
   workflow_dispatch:
+    inputs:
+      yt_dlp_hash:
+        description: "yt-dlp commit hash"
+        required: false
+        type: string
+      yt_dlp_version:
+        description: "yt-dlp version (YYYY.MM.DD)"
+        required: false
+        type: string
 
   schedule:
     - cron: '42 23 * * *'  # daily at 23:42 UTC
@@ -23,20 +32,24 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: yt-dlp/yt-dlp
+          ref: ${{ inputs.yt_dlp_hash }}
 
       - name: Generate Outputs
         id: generate-outputs
         run: |
           set -xeu
 
-          commit_date="$(TZ=UTC git log -1 --format=%cd --date=format-local:'%Y.%m.%d')"
-          current_date="$(TZ=UTC date +"%Y.%m.%d")"
+          commit_date="$(TZ=UTC git log -1 --format=%cd --date=format-local:%Y.%m.%d)"
+          current_date="${YT_DLP_VERSION:-$(TZ=UTC date +%Y.%m.%d)}"
           skip_build="false"
           [[ "$commit_date" == "$current_date" ]] || skip_build="true"
 
           echo "yt_dlp_version=$current_date" >> $GITHUB_OUTPUT
-          echo "yt_dlp_ref=$(git log -1 --format=%H)" >> $GITHUB_OUTPUT
+          echo "yt_dlp_ref=${YT_DLP_HASH:-$(git log -1 --format=%H)}" >> $GITHUB_OUTPUT
           echo "skip_build=$skip_build" >> $GITHUB_OUTPUT
+        env:
+          YT_DLP_HASH: ${{ inputs.yt_dlp_hash }}
+          YT_DLP_VERSION: ${{ inputs.yt_dlp_version }}
 
   build:
     needs: prepare
