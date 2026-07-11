@@ -42,7 +42,8 @@ jobs:
           commit_date="$(TZ=UTC git log -1 --format=%cd --date=format-local:%Y.%m.%d)"
           current_date="${YT_DLP_VERSION:-$(TZ=UTC date +%Y.%m.%d)}"
           skip_build="false"
-          [[ "$commit_date" == "$current_date" ]] || skip_build="true"
+          # temporary disabled, need better check (check last built version)
+          # [[ "$commit_date" == "$current_date" ]] || skip_build="true"
 
           echo "yt_dlp_version=$current_date" >> $GITHUB_OUTPUT
           echo "yt_dlp_ref=${YT_DLP_HASH:-$(git log -1 --format=%H)}" >> $GITHUB_OUTPUT
