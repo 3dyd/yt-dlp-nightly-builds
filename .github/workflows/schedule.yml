@@ -38,6 +38,8 @@ jobs:
 
           since="${YT_DLP_VERSION:-$(date -d yesterday +%Y.%m.%d)}"
           git fetch --shallow-since="$since" --update-shallow
+        env:
+          YT_DLP_VERSION: ${{ inputs.yt_dlp_version }}
 
       - name: Generate Outputs
         id: generate-outputs
