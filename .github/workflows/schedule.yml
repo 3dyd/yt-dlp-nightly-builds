@@ -32,24 +32,19 @@ jobs:
         with:
           repository: yt-dlp/yt-dlp
 
-      - name: Fetch history
-        run: |
-          set -xeu
-
-          since="${YT_DLP_VERSION:-$(date -d yesterday +%Y.%m.%d)}"
-          git fetch --shallow-since="$since" --update-shallow
-        env:
-          YT_DLP_VERSION: ${{ inputs.yt_dlp_version }}
-
       - name: Generate Outputs
         id: generate-outputs
         run: |
           set -xeu
 
           current_date="${YT_DLP_VERSION:-$(date -d yesterday +%Y.%m.%d)}"
-          commit_date="$(git log -1 --since="$current_date 00:00:00" --until="$current_date 23:59:59" --format=%cd --date=format-local:%Y.%m.%d)"
           skip_build="false"
-          [[ "$commit_date" == "$current_date" ]] || skip_build="true"
+          git fetch --shallow-since="$current_date" --update-shallow || skip_build="true"
+
+          if [[ "$skip_build" == "false" ]]; then
+            commit_date="$(git log -1 --since="$current_date 00:00:00" --until="$current_date 23:59:59" --format=%cd --date=format-local:%Y.%m.%d)"
+            [[ "$commit_date" == "$current_date" ]] || skip_build="true"
+          fi
 
           echo "yt_dlp_version=$current_date" >> $GITHUB_OUTPUT
           echo "yt_dlp_ref=$(git log -1 --since="$current_date 00:00:00" --until="$current_date 23:59:59" --format=%H)" >> $GITHUB_OUTPUT
